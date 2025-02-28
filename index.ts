@@ -118,14 +118,8 @@ class SequentialThinkingServer {
       isRevision, 
       revisesThought, 
       branchFromThought, 
-      branchId,
       phase,
-      status,
-      complexity,
-      dependencies,
-      toolsUsed,
-      promptAlignment,
-      intelligenceRecommendations
+      status
     } = thoughtData;
 
     // Create a compact header with essential information
@@ -151,82 +145,25 @@ class SequentialThinkingServer {
     
     if (status) {
       const statusSymbol = status === 'complete' ? '✓' : 
-                           status === 'needs-revision' ? '⚠️' : '⏳';
+                         status === 'needs-revision' ? '⚠️' : '⏳';
       header += ` | ${statusSymbol}`;
     }
     
     // Add prompt alignment if available (important for reasoning quality)
-    if (promptAlignment !== undefined) {
-      const alignmentSymbol = promptAlignment >= 7 ? '✓' : 
-                             promptAlignment >= 4 ? '⚠️' : '❌';
-      header += ` | A:${promptAlignment}${alignmentSymbol}`;
-    }
-    
-    // Create the thought content
-    let formattedThought = thought;
-    
-    // Add essential metadata in a compact format
-    let metadata = [];
-    
-    // Add dependencies if they exist
-    if (dependencies && dependencies.length > 0) {
-      metadata.push(`Deps: T${dependencies.join(', T')}`);
-    }
-    
-    // Add tools used if they exist (keep it brief)
-    if (toolsUsed && toolsUsed.length > 0) {
-      metadata.push(`Tools: ${toolsUsed.join(', ')}`);
-    }
-    
-    // Add drift warning if it exists (important for reasoning quality)
-    if (thoughtData.driftWarning) {
-      metadata.push(`Warning: ${thoughtData.driftWarning}`);
-    }
-    
-    // Add metadata to thought if any exists
-    if (metadata.length > 0) {
-      formattedThought += `\n\n${metadata.join(' | ')}`;
-    }
-    
-    // Add only the most critical intelligence recommendations
-    let recommendations = [];
-    
-    // Add cognitive biases (limit to 1 most likely)
-    if (intelligenceRecommendations && intelligenceRecommendations.cognitiveBiases && 
-        intelligenceRecommendations.cognitiveBiases.length > 0) {
-      const topBias = intelligenceRecommendations.cognitiveBiases
-        .sort((a, b) => b.likelihood - a.likelihood)[0];
-      if (topBias.likelihood > 0.7) { // Only show high likelihood biases
-        recommendations.push(`Bias: ${topBias.biasType} - ${topBias.mitigationStrategy}`);
-      }
-    }
-    
-    // Add metacognitive strategy (limit to 1 most relevant)
-    if (intelligenceRecommendations && intelligenceRecommendations.metacognitiveStrategies && 
-        intelligenceRecommendations.metacognitiveStrategies.length > 0) {
-      const topStrategy = intelligenceRecommendations.metacognitiveStrategies[0];
-      recommendations.push(`Strategy: ${topStrategy.strategyName} - ${topStrategy.expectedBenefit}`);
-    }
-    
-    // Add insight prompt (limit to 1)
-    if (intelligenceRecommendations && intelligenceRecommendations.insightGenerationPrompts && 
-        intelligenceRecommendations.insightGenerationPrompts.length > 0) {
-      recommendations.push(`Insight: ${intelligenceRecommendations.insightGenerationPrompts[0]}`);
-    }
-    
-    // Add recommendations to thought if any exist
-    if (recommendations.length > 0) {
-      formattedThought += `\n\nRecommendations:\n• ${recommendations.join('\n• ')}`;
+    if (thoughtData.promptAlignment !== undefined) {
+      const alignmentSymbol = thoughtData.promptAlignment >= 7 ? '✓' : 
+                           thoughtData.promptAlignment >= 4 ? '⚠️' : '❌';
+      header += ` | A:${thoughtData.promptAlignment}${alignmentSymbol}`;
     }
     
     // Create a simpler border
-    const border = '─'.repeat(Math.min(80, Math.max(header.length, 40)));
+    const border = '─'.repeat(Math.min(60, Math.max(header.length, 30)));
 
     return `
 ┌${border}┐
 │ ${header.padEnd(border.length - 2)} │
 ├${border}┤
-${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)} │`).join('\n')}
+${thought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)} │`).join('\n')}
 └${border}┘`;
   }
 
@@ -289,68 +226,14 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
     const guidance: string[] = [];
     const progress = currentThought.thoughtNumber / currentThought.totalThoughts;
     
-    // Check for stagnation (multiple thoughts in same phase)
-    const samePhaseCount = this.thoughtHistory
-      .filter(t => t.phase === currentThought.phase)
-      .length;
-    
-    if (samePhaseCount > 4 && currentThought.phase !== 'Execution') {
-      guidance.push(`Consider transitioning from ${currentThought.phase} to the next phase`);
-    }
-    
-    // Check for excessive revisions
-    const revisionCount = this.thoughtHistory
-      .filter(t => t.isRevision)
-      .length;
-    
-    if (revisionCount > 3) {
-      guidance.push("Multiple revisions detected. Consider whether a different approach is needed");
-    }
-    
-    // Suggest tool usage if none used
-    if (!currentThought.toolsUsed || currentThought.toolsUsed.length === 0) {
-      // Filter out sequentialthinking from available tools
-      const otherTools = this.availableTools.filter(t => t !== "sequentialthinking");
-      if (otherTools.length > 0) {
-        guidance.push(`Consider using available tools: ${otherTools.join(', ')}`);
-      }
-    }
-    
-    // Suggest branching for complex problems with no branches
-    if (Object.keys(this.branches).length === 0 && 
-        (currentThought.complexity === 'complex' || this.thoughtHistory.length > 8)) {
-      guidance.push("For this complex problem, consider exploring alternative approaches through branching");
-    }
-
     // Check for phase progression
     if (progress > 0.75 && currentThought.phase !== 'Verification') {
       guidance.push("Consider transitioning to the Verification phase to validate your solution");
-    }
-
-    // Check for thought quality
-    if (currentThought.quality) {
-      if (currentThought.quality.qualityScore < 5) {
-        guidance.push("Consider improving the quality of this thought based on the feedback provided");
-      }
     }
     
     // Check for prompt alignment
     if (currentThought.promptAlignment !== undefined && currentThought.promptAlignment < 5) {
       guidance.push("This thought has low alignment with the original prompt. Consider revising to better address the prompt's goals");
-      
-      // Add specific correction suggestions if available
-      if (currentThought.suggestedCorrections && currentThought.suggestedCorrections.length > 0) {
-        currentThought.suggestedCorrections.forEach(correction => {
-          guidance.push(correction);
-        });
-      }
-    }
-    
-    // Check for prompt drift pattern
-    const recentThoughts = this.thoughtHistory.slice(-3);
-    const driftingThoughts = recentThoughts.filter(t => t.promptAlignment !== undefined && t.promptAlignment < 5);
-    if (driftingThoughts.length >= 2) {
-      guidance.push("Multiple recent thoughts show low prompt alignment. Consider refocusing on the original prompt goals");
     }
     
     // Add intelligence maximization guidance if available
@@ -365,33 +248,6 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
       if (currentThought.intelligenceRecommendations.reasoningTypes.length > 0) {
         const topReasoningType = currentThought.intelligenceRecommendations.reasoningTypes[0];
         guidance.push(`Consider using ${topReasoningType.reasoningType} reasoning: ${topReasoningType.description}`);
-      }
-      
-      // Add focus area recommendation
-      if (currentThought.intelligenceRecommendations.focusAreas.length > 0) {
-        guidance.push(`Focus on: ${currentThought.intelligenceRecommendations.focusAreas[0]}`);
-      }
-      
-      // Add pitfall warning
-      if (currentThought.intelligenceRecommendations.potentialPitfalls.length > 0) {
-        guidance.push(`Watch out for: ${currentThought.intelligenceRecommendations.potentialPitfalls[0]}`);
-      }
-      
-      // Add adaptive suggestions
-      if (currentThought.intelligenceRecommendations.adaptiveSuggestions && 
-          currentThought.intelligenceRecommendations.adaptiveSuggestions.length > 0) {
-        guidance.push(...currentThought.intelligenceRecommendations.adaptiveSuggestions.slice(0, 2));
-      }
-      
-      // Add cognitive bias mitigation if high likelihood biases detected
-      if (currentThought.intelligenceRecommendations.cognitiveBiases && 
-          currentThought.intelligenceRecommendations.cognitiveBiases.length > 0) {
-        const highLikelihoodBias = currentThought.intelligenceRecommendations.cognitiveBiases
-          .find(bias => bias.likelihood > 0.7);
-        
-        if (highLikelihoodBias) {
-          guidance.push(`Be aware of potential ${highLikelihoodBias.biasType}: ${highLikelihoodBias.mitigationStrategy}`);
-        }
       }
     }
     
@@ -461,33 +317,20 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
         validatedInput.phase = phaseMap[validatedInput.thoughtNumber] || 'Execution';
       }
 
-      // Enhance thought with semantic analysis
-      validatedInput.vector = this.semanticAnalyzer.buildThoughtVectors(validatedInput);
-      validatedInput.conceptsExtracted = this.semanticAnalyzer.extractConcepts(validatedInput);
+      // Enhance thought with semantic analysis (minimal)
+      validatedInput.keywords = this.extractKeywords(validatedInput.thought);
 
-      // Check for contradictions
+      // Check for contradictions (minimal)
       const contradictions = this.contradictionDetector.checkContradictions(
         validatedInput,
         this.thoughtHistory
       );
       if (contradictions.hasContradictions) {
         validatedInput.contradictions = contradictions.details;
-        console.error(chalk.yellow('\nPotential contradictions detected:'));
-        contradictions.details.forEach(detail => {
-          console.error(`  • With thought ${detail.thoughtNumber}: ${detail.explanation}`);
-        });
+        console.error(chalk.yellow('\nPotential contradictions detected'));
       }
 
-      // Generate reflection prompts
-      validatedInput.reflectionPrompts = this.reflectionEngine.generateReflectionPrompts([
-        ...this.thoughtHistory,
-        validatedInput
-      ]);
-
-      // Identify assumptions
-      validatedInput.assumptions = this.reflectionEngine.identifyAssumptions(validatedInput);
-      
-      // Analyze prompt alignment if prompt context is initialized
+      // Analyze prompt alignment if prompt context is initialized (minimal)
       if (this.promptContext.isInitialized()) {
         const promptMetadata = this.promptContext.getMetadata();
         if (promptMetadata) {
@@ -500,23 +343,8 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
           validatedInput.promptAlignment = alignmentData.promptAlignment;
           validatedInput.promptRelevance = alignmentData.promptRelevance;
           validatedInput.driftWarning = alignmentData.driftWarning;
-          validatedInput.suggestedCorrections = alignmentData.suggestedCorrections;
           
-          // Log alignment information
-          console.error(chalk.cyan('\nPrompt Alignment:'));
-          console.error(`  Alignment Score: ${alignmentData.promptAlignment}/10`);
-          
-          if (alignmentData.driftWarning) {
-            console.error(chalk.yellow(`  Warning: ${alignmentData.driftWarning}`));
-            if (alignmentData.suggestedCorrections) {
-              console.error(chalk.yellow('  Suggested Corrections:'));
-              alignmentData.suggestedCorrections.forEach(correction => {
-                console.error(`    • ${correction}`);
-              });
-            }
-          }
-          
-          // Generate intelligence maximization recommendations
+          // Generate intelligence maximization recommendations (minimal)
           if (promptMetadata) {
             validatedInput.intelligenceRecommendations = this.intelligenceMaximizationModule.generateRecommendations(
               promptMetadata,
@@ -524,111 +352,6 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
               validatedInput.totalThoughts,
               validatedInput.phase
             );
-          }
-          
-          // After generating intelligenceRecommendations, extract and assign the new fields
-          if (validatedInput.intelligenceRecommendations) {
-            // Extract cognitive architectures if available
-            if (validatedInput.intelligenceRecommendations.cognitiveArchitectures) {
-              validatedInput.cognitiveArchitectures = 
-                validatedInput.intelligenceRecommendations.cognitiveArchitectures;
-            }
-            
-            // Extract epistemological frameworks if available
-            if (validatedInput.intelligenceRecommendations.epistemologicalFrameworks) {
-              validatedInput.epistemologicalFrameworks = 
-                validatedInput.intelligenceRecommendations.epistemologicalFrameworks;
-            }
-            
-            // Extract advanced metacognitive strategies if available
-            if (validatedInput.intelligenceRecommendations.advancedMetacognitiveStrategies) {
-              validatedInput.advancedMetacognitiveStrategies = 
-                validatedInput.intelligenceRecommendations.advancedMetacognitiveStrategies;
-            }
-            
-            // Extract conceptual blending if available
-            if (validatedInput.intelligenceRecommendations.conceptualBlending) {
-              validatedInput.conceptualBlending = 
-                validatedInput.intelligenceRecommendations.conceptualBlending;
-            }
-            
-            // Extract dialectical reasoning if available
-            if (validatedInput.intelligenceRecommendations.dialecticalReasoning) {
-              validatedInput.dialecticalReasoning = 
-                validatedInput.intelligenceRecommendations.dialecticalReasoning;
-            }
-            
-            // Extract adaptive learning path if available
-            if (validatedInput.intelligenceRecommendations.adaptiveLearningPath) {
-              validatedInput.adaptiveLearningPath = 
-                validatedInput.intelligenceRecommendations.adaptiveLearningPath;
-            }
-            
-            // Log advanced intelligence information
-            console.error(chalk.cyan('\nAdvanced Intelligence Features:'));
-            if (validatedInput.cognitiveArchitectures) {
-              console.error(chalk.green('  Cognitive Architectures:'), 
-                validatedInput.cognitiveArchitectures.map(a => a.architectureName).join(', '));
-            }
-            if (validatedInput.epistemologicalFrameworks) {
-              console.error(chalk.green('  Epistemological Frameworks:'), 
-                validatedInput.epistemologicalFrameworks.map(f => f.frameworkName).join(', '));
-            }
-            if (validatedInput.advancedMetacognitiveStrategies) {
-              console.error(chalk.green('  Advanced Metacognitive Strategies:'), 
-                validatedInput.advancedMetacognitiveStrategies.map(s => s.strategyName).join(', '));
-            }
-          }
-          
-          // Log intelligence maximization information
-          console.error(chalk.cyan('\nIntelligence Maximization:'));
-          
-          // Only log if intelligenceRecommendations is defined
-          if (validatedInput.intelligenceRecommendations) {
-            // Log recommended strategies
-            if (validatedInput.intelligenceRecommendations.strategies.length > 0) {
-              console.error(chalk.green('  Recommended Strategies:'));
-              validatedInput.intelligenceRecommendations.strategies.forEach(strategy => {
-                console.error(`    • ${strategy.strategyName}: ${strategy.description}`);
-                console.error(`      Reason: ${strategy.reasonForRecommendation}`);
-              });
-            }
-            
-            // Log recommended reasoning types
-            if (validatedInput.intelligenceRecommendations.reasoningTypes.length > 0) {
-              console.error(chalk.green('  Recommended Reasoning Types:'));
-              validatedInput.intelligenceRecommendations.reasoningTypes.forEach(reasoningType => {
-                console.error(`    • ${reasoningType.reasoningType}: ${reasoningType.description}`);
-              });
-            }
-            
-            // Log complexity estimation
-            const complexityEstimation = validatedInput.intelligenceRecommendations.complexityEstimation;
-            console.error(chalk.green('  Complexity Estimation:'));
-            console.error(`    Overall: ${complexityEstimation.overallComplexity}`);
-            console.error(`    Recommended Thoughts: ${complexityEstimation.recommendedThoughtCount}`);
-            
-            // Log focus areas
-            if (validatedInput.intelligenceRecommendations.focusAreas.length > 0) {
-              console.error(chalk.green('  Focus Areas:'));
-              validatedInput.intelligenceRecommendations.focusAreas.forEach(area => {
-                console.error(`    • ${area}`);
-              });
-            }
-            
-            // Log potential pitfalls
-            if (validatedInput.intelligenceRecommendations.potentialPitfalls.length > 0) {
-              console.error(chalk.yellow('  Potential Pitfalls:'));
-              validatedInput.intelligenceRecommendations.potentialPitfalls.forEach(pitfall => {
-                console.error(`    • ${pitfall}`);
-              });
-            }
-            
-            // Adjust totalThoughts based on complexity estimation if needed
-            if (complexityEstimation.recommendedThoughtCount > validatedInput.totalThoughts) {
-              validatedInput.totalThoughts = complexityEstimation.recommendedThoughtCount;
-              console.error(chalk.cyan(`  Adjusting total thoughts to ${validatedInput.totalThoughts} based on complexity estimation`));
-            }
           }
         }
       }
@@ -644,88 +367,25 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
         this.branches[validatedInput.branchId].push(validatedInput);
       }
 
-      // Generate visualizations
+      // Generate only essential visualizations
       const dependencyGraph = this.graphRenderer.generateDependencyGraph(this.thoughtHistory);
       console.error(dependencyGraph);
-
-      const conceptMap = this.graphRenderer.generateConceptMap(this.thoughtHistory);
-      console.error(conceptMap);
-
-      const timeline = this.graphRenderer.generateTimelineView(this.thoughtHistory);
-      console.error(timeline);
-
-      // Generate prompt-centered visualizations if prompt context is initialized
-      if (this.promptContext.isInitialized()) {
-        const promptMetadata = this.promptContext.getMetadata();
-        if (promptMetadata) {
-          // Generate prompt alignment view
-          const promptAlignmentView = this.graphRenderer.generatePromptAlignmentView(
-            this.thoughtHistory, 
-            promptMetadata
-          );
-          console.error(promptAlignmentView);
-          
-          // Generate prompt progress view
-          const promptProgressView = this.graphRenderer.generatePromptProgressView(
-            this.thoughtHistory, 
-            promptMetadata
-          );
-          console.error(promptProgressView);
-        }
-      }
-
-      // Generate new advanced visualizations
-      if (validatedInput.intelligenceRecommendations) {
-        // Generate cognitive model visualization if available
-        if (validatedInput.intelligenceRecommendations.cognitiveModels && 
-            validatedInput.intelligenceRecommendations.cognitiveModels.length > 0) {
-          const cognitiveModelViz = this.graphRenderer.generateCognitiveModelVisualization(
-            this.thoughtHistory,
-            validatedInput.intelligenceRecommendations.cognitiveModels
-          );
-          console.error(cognitiveModelViz);
-        }
-        
-        // Generate reasoning framework visualization if available
-        if (validatedInput.intelligenceRecommendations.reasoningFrameworks && 
-            validatedInput.intelligenceRecommendations.reasoningFrameworks.length > 0) {
-          const reasoningFrameworkViz = this.graphRenderer.generateReasoningFrameworkVisualization(
-            this.thoughtHistory,
-            validatedInput.intelligenceRecommendations.reasoningFrameworks
-          );
-          console.error(reasoningFrameworkViz);
-        }
-        
-        // Generate intelligence dashboard
-        // Get metadata and ensure it's not null
-        const metadata = this.promptContext.isInitialized() ? this.promptContext.getMetadata() || undefined : undefined;
-        
-        const intelligenceDashboard = this.graphRenderer.generateIntelligenceDashboard(
-          this.thoughtHistory,
-          metadata,
-          validatedInput.intelligenceRecommendations
-        );
-        console.error(intelligenceDashboard);
-      }
 
       // Calculate progress
       const progress = (validatedInput.thoughtNumber / validatedInput.totalThoughts) * 100;
       const progressBar = this.createProgressBar(progress);
       console.error(progressBar);
 
-      // Track tool usage
-      this.trackToolUsage(validatedInput);
+      // Generate strategic guidance (minimal)
+      const guidance = this.provideStrategicGuidance(validatedInput).slice(0, 2);
 
-      // Generate strategic guidance
-      const guidance = this.provideStrategicGuidance(validatedInput);
-
-      // Add guidance to console output
+      // Add guidance to console output (minimal)
       if (guidance.length > 0) {
-        console.error(chalk.yellow('\nStrategic Guidance:'));
+        console.error(chalk.yellow('\nGuidance:'));
         guidance.forEach(g => console.error(`  • ${g}`));
       }
 
-      // Return enhanced response
+      // Return enhanced response (minimal)
       return {
         content: [{
           type: "text",
@@ -738,7 +398,7 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
             complexity: validatedInput.complexity || this.estimateComplexity(),
             progress: `${Math.round(progress)}%`,
             // Include only the most essential guidance
-            strategicGuidance: guidance.slice(0, 3), // Limit to top 3 guidance items
+            strategicGuidance: guidance.slice(0, 2),
             // Include only essential analytics data
             promptAlignment: validatedInput.promptAlignment,
             driftWarning: validatedInput.driftWarning,
@@ -746,11 +406,7 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
             recommendations: validatedInput.intelligenceRecommendations ? {
               strategies: validatedInput.intelligenceRecommendations.strategies?.slice(0, 1),
               reasoningTypes: validatedInput.intelligenceRecommendations.reasoningTypes?.slice(0, 1),
-              focusAreas: validatedInput.intelligenceRecommendations.focusAreas?.slice(0, 1),
-              potentialPitfalls: validatedInput.intelligenceRecommendations.potentialPitfalls?.slice(0, 1),
-              cognitiveBiases: validatedInput.intelligenceRecommendations?.cognitiveBiases?.slice(0, 1),
-              metacognitiveStrategies: validatedInput.intelligenceRecommendations?.metacognitiveStrategies?.slice(0, 1),
-              insightPrompts: validatedInput.intelligenceRecommendations?.insightGenerationPrompts?.slice(0, 1)
+              focusAreas: validatedInput.intelligenceRecommendations.focusAreas?.slice(0, 1)
             } : undefined
           }, null, 2)
         }]
@@ -770,7 +426,7 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
   }
 
   private createProgressBar(percentage: number): string {
-    const width = 30; // Reduced from 50
+    const width = 20; // Reduced from 30
     const completed = Math.floor(width * (percentage / 100));
     const remaining = width - completed;
     
@@ -941,23 +597,22 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
 
   private extractKeywords(text: string): string[] {
     // Simple keyword extraction
-    // In a real implementation, this could use NLP techniques
     const words = text.toLowerCase()
       .replace(/[^\w\s]/g, '') 
       .split(/\s+/)
-      .filter(word => word.length > 4)  // Filter out short words
-      .filter(word => !['about', 'above', 'across', 'after', 'again'].includes(word)); // Filter common stop words
+      .filter(word => word.length > 4)
+      .filter(word => !['about', 'above', 'across', 'after', 'again'].includes(word));
     
     // Count word frequency
-    const wordCounts = words.reduce((acc, word) => {
-      acc[word] = (acc[word] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const wordCounts: Record<string, number> = {};
+    for (const word of words) {
+      wordCounts[word] = (wordCounts[word] || 0) + 1;
+    }
     
-    // Return top 5-10 keywords by frequency
+    // Return top 5 keywords by frequency
     return Object.entries(wordCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
+      .slice(0, 5)
       .map(([word]) => word);
   }
 

@@ -121,6 +121,7 @@ export class PromptAnalyzer {
     
     // Calculate relevance to different prompt aspects (simplified)
     const promptRelevance: Record<string, number> = {};
+    const thoughtLower = thought.toLowerCase();
     
     // Only calculate relevance for goals (most important)
     promptMetadata.goals.forEach((goal, index) => {
@@ -129,32 +130,22 @@ export class PromptAnalyzer {
         .split(/\s+/)
         .filter(word => word.length > 3);
       
-      let goalKeywordMatches = 0;
-      for (const keyword of goalKeywords) {
-        if (thought.toLowerCase().includes(keyword)) {
-          goalKeywordMatches++;
-        }
-      }
-      
+      const goalKeywordMatches = goalKeywords.filter(keyword => thoughtLower.includes(keyword)).length;
       const relevance = goalKeywords.length > 0 ? 
         (goalKeywordMatches / goalKeywords.length) * 10 : 5;
       
       promptRelevance[`goal_${index}`] = Math.round(relevance);
     });
     
-    // Generate alignment data
-    const alignmentData: PromptAlignmentData = {
+    // Generate alignment data with conditional drift warning
+    return {
       promptAlignment,
-      promptRelevance
+      promptRelevance,
+      ...(promptAlignment < 4 && {
+        driftWarning: `Low alignment with prompt (${promptAlignment}/10)`,
+        suggestedCorrections: [`Focus more on the main goals: ${promptMetadata.goals[0]}`]
+      })
     };
-    
-    // Add drift warning only if alignment is very low
-    if (promptAlignment < 4) {
-      alignmentData.driftWarning = `Low alignment with prompt (${promptAlignment}/10)`;
-      alignmentData.suggestedCorrections = [`Focus more on the main goals: ${promptMetadata.goals[0]}`];
-    }
-    
-    return alignmentData;
   }
 
   /**

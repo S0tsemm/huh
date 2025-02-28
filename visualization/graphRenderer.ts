@@ -31,7 +31,7 @@ export class GraphRenderer {
       }
     });
 
-    // Generate graph visualization
+    // Generate simplified graph visualization
     thoughts.forEach(thought => {
       if (thought.isRevision) return;
 
@@ -39,48 +39,25 @@ export class GraphRenderer {
       const colorFn = this.getPhaseColor(phase);
       const connections = adjacencyList[thought.thoughtNumber] || [];
 
-      // Format node
+      // Format node with minimal information
       const nodeLabel = `T${thought.thoughtNumber}`;
       const nodeWithPhase = `${nodeLabel}(${phase[0]})`;
-      const qualityIndicator = thought.quality ? 
-        ` [Q:${thought.quality.qualityScore}]` : '';
-      const classificationTag = thought.classification ?
-        ` [${thought.classification}]` : '';
       
-      // Add prompt alignment indicator
-      const alignmentIndicator = thought.promptAlignment !== undefined ?
-        ` [A:${thought.promptAlignment}${thought.promptAlignment >= 7 ? '✓' : thought.promptAlignment >= 4 ? '⚠️' : '❌'}]` : '';
-
       lines.push(colorFn(
-        `${nodeWithPhase.padEnd(10)}${qualityIndicator}${classificationTag}${alignmentIndicator} ${
+        `${nodeWithPhase.padEnd(10)} ${
           connections.length ? '→' : ''
         } ${connections.map(c => `T${c}`).join(', ')}`
       ));
     });
 
-    // Add branch information
+    // Add branch information (simplified)
     const branches = this.groupThoughtsByBranch(thoughts);
     if (Object.keys(branches).length > 0) {
       lines.push(chalk.yellow('\nBranches:'));
       Object.entries(branches).forEach(([branchId, branchThoughts]) => {
-        const branchInfo = branchThoughts
-          .map(t => {
-            const phase = t.phase || 'Execution';
-            const colorFn = this.getPhaseColor(phase);
-            return colorFn(`T${t.thoughtNumber}(${phase[0]})`);
-          })
-          .join(' → ');
-        lines.push(`  ${branchId}: ${branchInfo}`);
+        lines.push(`  ${branchId}: ${branchThoughts.map(t => `T${t.thoughtNumber}`).join(' → ')}`);
       });
     }
-
-    // Add legend
-    lines.push('\nLegend:');
-    ['Planning', 'Analysis', 'Execution', 'Verification'].forEach(phase => {
-      const colorFn = this.getPhaseColor(phase);
-      lines.push(`  ${colorFn(`${phase[0]}`)} - ${phase}`);
-    });
-    lines.push(`  A:# - Prompt Alignment Score (A:8✓ = good, A:5⚠️ = moderate, A:2❌ = poor)`);
 
     return lines.join('\n') + '\n';
   }
