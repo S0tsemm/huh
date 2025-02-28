@@ -442,32 +442,20 @@ export class ContradictionDetector {
     
     const strategies: string[] = [];
     
-    // Generate specific strategies based on contradiction types
-    contradictions.forEach(contradiction => {
+    // Generate only one specific strategy based on the first contradiction
+    if (contradictions.length > 0) {
+      const contradiction = contradictions[0];
       if (contradiction.type === 'goal') {
-        strategies.push(`Revise thought to align with the goal: "${contradiction.element}"`);
-        strategies.push(`Consider how to achieve the goal while maintaining your current approach`);
+        strategies.push(`Revise to align with goal: "${contradiction.element}"`);
       } else if (contradiction.type === 'constraint') {
-        strategies.push(`Modify approach to respect the constraint: "${contradiction.element}"`);
-        strategies.push(`Find alternative solutions that don't violate this constraint`);
-      } else if (contradiction.type === 'domain') {
-        strategies.push(`Incorporate knowledge from the domain: "${contradiction.element}"`);
+        strategies.push(`Modify to respect constraint: "${contradiction.element}"`);
       }
-    });
-    
-    // Add general strategies
-    strategies.push(`Review the original prompt to ensure alignment with all requirements`);
-    
-    // Add thought-specific strategies
-    if (thought.phase === 'Planning') {
-      strategies.push(`Adjust your planning to incorporate the prompt requirements`);
-    } else if (thought.phase === 'Execution') {
-      strategies.push(`Modify your implementation approach to resolve these contradictions`);
-    } else if (thought.phase === 'Verification') {
-      strategies.push(`Verify your solution against all prompt requirements`);
     }
     
-    return [...new Set(strategies)]; // Remove duplicates
+    // Add one general strategy
+    strategies.push(`Review prompt requirements`);
+    
+    return strategies;
   }
 
   /**

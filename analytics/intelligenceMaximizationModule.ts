@@ -1073,7 +1073,7 @@ export class IntelligenceMaximizationModule {
   ): CognitiveBiasDetection[] {
     const biases: CognitiveBiasDetection[] = [];
     
-    // Add task-specific biases
+    // Add only the most relevant task-specific bias
     switch (promptMetadata.taskType) {
       case 'creative':
         biases.push({
@@ -1103,7 +1103,7 @@ export class IntelligenceMaximizationModule {
         break;
     }
     
-    // Add phase-specific biases
+    // Add phase-specific bias if phase is provided
     if (phase) {
       switch (phase) {
         case 'Planning':
@@ -1142,16 +1142,6 @@ export class IntelligenceMaximizationModule {
           });
           break;
       }
-    }
-    
-    // Add complexity-specific biases
-    if (promptMetadata.complexity === 'complex') {
-      biases.push({
-        biasType: 'Simplification bias',
-        description: 'Reducing complex problems to simpler models that miss key factors',
-        likelihood: 0.8,
-        mitigationStrategy: 'Explicitly map out interconnections and feedback loops'
-      });
     }
     
     return biases;
