@@ -125,124 +125,108 @@ class SequentialThinkingServer {
       dependencies,
       toolsUsed,
       promptAlignment,
-      // Add new fields
       intelligenceRecommendations
     } = thoughtData;
 
-    let prefix = '';
-    let context = '';
-    let phaseEmoji = '';
+    // Create a compact header with essential information
+    let header = '';
     
-    // Define phase emoji
-    if (phase === 'Planning') phaseEmoji = '📝 ';
-    else if (phase === 'Analysis') phaseEmoji = '🔍 ';
-    else if (phase === 'Execution') phaseEmoji = '⚙️ ';
-    else if (phase === 'Verification') phaseEmoji = '✅ ';
-    
-    // Define thought type
+    // Add thought type indicator
     if (isRevision) {
-      prefix = chalk.yellow('🔄 Revision');
-      context = ` (revising thought ${revisesThought})`;
+      header = `🔄 Rev T${thoughtNumber}/${totalThoughts} (rev T${revisesThought})`;
     } else if (branchFromThought) {
-      prefix = chalk.green('🌿 Branch');
-      context = ` (from thought ${branchFromThought}, ID: ${branchId})`;
+      header = `🌿 Branch T${thoughtNumber}/${totalThoughts} (from T${branchFromThought})`;
     } else {
-      prefix = chalk.blue('💭 Thought');
-      context = '';
+      header = `💭 T${thoughtNumber}/${totalThoughts}`;
     }
-
-    // Create the header with phase and status info
-    const phaseInfo = phase ? ` | ${phaseEmoji}${phase}` : '';
-    const statusInfo = status ? ` | ${status === 'complete' ? '✓' : status === 'needs-revision' ? '⚠️' : '⏳'}` : '';
-    const complexityInfo = complexity ? ` | Complexity: ${complexity}` : '';
     
-    // Add prompt alignment info if available
-    const alignmentInfo = promptAlignment !== undefined ? 
-      ` | Prompt Alignment: ${promptAlignment}/10 ${promptAlignment >= 7 ? '✓' : promptAlignment >= 4 ? '⚠️' : '❌'}` : '';
+    // Add phase and status if available
+    if (phase) {
+      const phaseEmoji = phase === 'Planning' ? '📝' : 
+                         phase === 'Analysis' ? '🔍' : 
+                         phase === 'Execution' ? '⚙️' : 
+                         phase === 'Verification' ? '✅' : '';
+      header += ` | ${phaseEmoji}${phase}`;
+    }
     
-    const header = `${prefix} ${thoughtNumber}/${totalThoughts}${context}${phaseInfo}${statusInfo}${complexityInfo}${alignmentInfo}`;
+    if (status) {
+      const statusSymbol = status === 'complete' ? '✓' : 
+                           status === 'needs-revision' ? '⚠️' : '⏳';
+      header += ` | ${statusSymbol}`;
+    }
+    
+    // Add prompt alignment if available (important for reasoning quality)
+    if (promptAlignment !== undefined) {
+      const alignmentSymbol = promptAlignment >= 7 ? '✓' : 
+                             promptAlignment >= 4 ? '⚠️' : '❌';
+      header += ` | A:${promptAlignment}${alignmentSymbol}`;
+    }
     
     // Create the thought content
     let formattedThought = thought;
     
+    // Add essential metadata in a compact format
+    let metadata = [];
+    
     // Add dependencies if they exist
     if (dependencies && dependencies.length > 0) {
-      formattedThought += `\n\nDepends on thoughts: ${dependencies.join(', ')}`;
+      metadata.push(`Deps: T${dependencies.join(', T')}`);
     }
     
-    // Add tools used if they exist
+    // Add tools used if they exist (keep it brief)
     if (toolsUsed && toolsUsed.length > 0) {
-      formattedThought += `\n\nTools used: ${toolsUsed.join(', ')}`;
+      metadata.push(`Tools: ${toolsUsed.join(', ')}`);
     }
     
-    // Add drift warning if it exists
+    // Add drift warning if it exists (important for reasoning quality)
     if (thoughtData.driftWarning) {
-      formattedThought += `\n\nWarning: ${thoughtData.driftWarning}`;
+      metadata.push(`Warning: ${thoughtData.driftWarning}`);
     }
     
-    // Add prompt relevance details if available
-    if (thoughtData.promptRelevance && Object.keys(thoughtData.promptRelevance).length > 0) {
-      formattedThought += '\n\nPrompt Relevance:';
-      Object.entries(thoughtData.promptRelevance)
-        .filter(([aspectName, score]) => score > 0.3) // Only show significant relevance
-        .sort(([aspectA, scoreA], [aspectB, scoreB]) => scoreB - scoreA) // Sort by score descending
-        .forEach(([aspect, score]) => {
-          const formattedAspect = aspect.replace('goal_', 'Goal ').replace('domain_', 'Domain ');
-          formattedThought += `\n  ${formattedAspect}: ${Math.round(score * 10)}/10`;
-        });
+    // Add metadata to thought if any exists
+    if (metadata.length > 0) {
+      formattedThought += `\n\n${metadata.join(' | ')}`;
     }
     
-    // Add suggested corrections if available
-    if (thoughtData.suggestedCorrections && thoughtData.suggestedCorrections.length > 0) {
-      formattedThought += '\n\nSuggested Improvements:';
-      thoughtData.suggestedCorrections.forEach(correction => {
-        formattedThought += `\n  • ${correction}`;
-      });
-    }
+    // Add only the most critical intelligence recommendations
+    let recommendations = [];
     
-    // Add cognitive biases if available
+    // Add cognitive biases (limit to 1 most likely)
     if (intelligenceRecommendations && intelligenceRecommendations.cognitiveBiases && 
         intelligenceRecommendations.cognitiveBiases.length > 0) {
-      formattedThought += '\n\nPotential Cognitive Biases:';
-      intelligenceRecommendations.cognitiveBiases
-        .sort((a, b) => b.likelihood - a.likelihood) // Sort by likelihood descending
-        .slice(0, 2) // Show only top 2 biases
-        .forEach(bias => {
-          formattedThought += `\n  • ${bias.biasType} (${Math.round(bias.likelihood * 10)}/10): ${bias.description}`;
-          formattedThought += `\n    Mitigation: ${bias.mitigationStrategy}`;
-        });
+      const topBias = intelligenceRecommendations.cognitiveBiases
+        .sort((a, b) => b.likelihood - a.likelihood)[0];
+      if (topBias.likelihood > 0.7) { // Only show high likelihood biases
+        recommendations.push(`Bias: ${topBias.biasType} - ${topBias.mitigationStrategy}`);
+      }
     }
     
-    // Add metacognitive strategies if available
+    // Add metacognitive strategy (limit to 1 most relevant)
     if (intelligenceRecommendations && intelligenceRecommendations.metacognitiveStrategies && 
         intelligenceRecommendations.metacognitiveStrategies.length > 0) {
-      formattedThought += '\n\nRecommended Thinking Strategies:';
-      intelligenceRecommendations.metacognitiveStrategies
-        .slice(0, 2) // Show only top 2 strategies
-        .forEach(strategy => {
-          formattedThought += `\n  • ${strategy.strategyName}: ${strategy.description}`;
-          formattedThought += `\n    Benefit: ${strategy.expectedBenefit}`;
-        });
+      const topStrategy = intelligenceRecommendations.metacognitiveStrategies[0];
+      recommendations.push(`Strategy: ${topStrategy.strategyName} - ${topStrategy.expectedBenefit}`);
     }
     
-    // Add insight prompts if available
+    // Add insight prompt (limit to 1)
     if (intelligenceRecommendations && intelligenceRecommendations.insightGenerationPrompts && 
         intelligenceRecommendations.insightGenerationPrompts.length > 0) {
-      formattedThought += '\n\nInsight Prompts:';
-      intelligenceRecommendations.insightGenerationPrompts
-        .slice(0, 2) // Show only top 2 prompts
-        .forEach(prompt => {
-          formattedThought += `\n  • ${prompt}`;
-        });
+      recommendations.push(`Insight: ${intelligenceRecommendations.insightGenerationPrompts[0]}`);
     }
     
-    const border = '─'.repeat(Math.max(header.length, formattedThought.length) + 4);
+    // Add recommendations to thought if any exist
+    if (recommendations.length > 0) {
+      formattedThought += `\n\nRecommendations:\n• ${recommendations.join('\n• ')}`;
+    }
+    
+    // Create a simpler border
+    const border = '─'.repeat(Math.min(80, Math.max(header.length, 40)));
 
     return `
 ┌${border}┐
 │ ${header.padEnd(border.length - 2)} │
 ├${border}┤
-│ ${formattedThought.split('\n').join(`\n│ `.padEnd(border.length - 2))} │
+${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)} │`).join('\n')}
 └${border}┘`;
   }
 
@@ -750,55 +734,23 @@ class SequentialThinkingServer {
             totalThoughts: validatedInput.totalThoughts,
             nextThoughtNeeded: validatedInput.nextThoughtNeeded,
             branches: Object.keys(this.branches),
-            thoughtHistoryLength: this.thoughtHistory.length,
-            availableTools: this.availableTools,
             phase: validatedInput.phase,
             complexity: validatedInput.complexity || this.estimateComplexity(),
             progress: `${Math.round(progress)}%`,
-            recentThoughts: this.getRecentThoughts(3),
-            suggestedNextPhase: this.suggestNextPhase(validatedInput),
-            thoughtQuality: validatedInput.quality,
-            strategicGuidance: guidance,
-            toolUsageStats: this.toolUsageStats,
-            keywords: validatedInput.keywords,
-            insightValue: validatedInput.insightValue,
-            // Analytics data
-            semanticAnalysis: {
-              concepts: validatedInput.conceptsExtracted,
-              contradictions: validatedInput.contradictions,
-              assumptions: validatedInput.assumptions,
-              reflectionPrompts: validatedInput.reflectionPrompts
-            },
-            // Prompt alignment data
+            // Include only the most essential guidance
+            strategicGuidance: guidance.slice(0, 3), // Limit to top 3 guidance items
+            // Include only essential analytics data
             promptAlignment: validatedInput.promptAlignment,
-            promptRelevance: validatedInput.promptRelevance,
             driftWarning: validatedInput.driftWarning,
-            suggestedCorrections: validatedInput.suggestedCorrections,
-            // Intelligence maximization data
-            intelligenceRecommendations: validatedInput.intelligenceRecommendations,
-            // New intelligence features
-            cognitiveBiases: validatedInput.intelligenceRecommendations?.cognitiveBiases,
-            metacognitiveStrategies: validatedInput.intelligenceRecommendations?.metacognitiveStrategies,
-            adaptiveSuggestions: validatedInput.intelligenceRecommendations?.adaptiveSuggestions,
-            insightPrompts: validatedInput.intelligenceRecommendations?.insightGenerationPrompts,
-            // New advanced intelligence features
-            cognitiveModels: validatedInput.intelligenceRecommendations?.cognitiveModels,
-            reasoningFrameworks: validatedInput.intelligenceRecommendations?.reasoningFrameworks,
-            decisionStrategies: validatedInput.intelligenceRecommendations?.decisionStrategies,
-            mentalModels: validatedInput.intelligenceRecommendations?.mentalModels,
-            // Add new advanced intelligence fields
-            cognitiveArchitectures: validatedInput.cognitiveArchitectures,
-            epistemologicalFrameworks: validatedInput.epistemologicalFrameworks,
-            advancedMetacognitiveStrategies: validatedInput.advancedMetacognitiveStrategies,
-            conceptualBlending: validatedInput.conceptualBlending,
-            dialecticalReasoning: validatedInput.dialecticalReasoning,
-            adaptiveLearningPath: validatedInput.adaptiveLearningPath,
-            // Prompt progress data
-            promptProgress: this.promptContext.isInitialized() && this.promptContext.getMetadata() ? {
-              overallProgress: this.calculateOverallProgress(),
-              estimatedRemainingThoughts: this.estimateRemainingThoughts(),
-              goalCoverage: this.calculateGoalCoverage(),
-              alignmentTrend: this.calculateAlignmentTrend()
+            // Include only the most critical intelligence recommendations
+            recommendations: validatedInput.intelligenceRecommendations ? {
+              strategies: validatedInput.intelligenceRecommendations.strategies?.slice(0, 1),
+              reasoningTypes: validatedInput.intelligenceRecommendations.reasoningTypes?.slice(0, 1),
+              focusAreas: validatedInput.intelligenceRecommendations.focusAreas?.slice(0, 1),
+              potentialPitfalls: validatedInput.intelligenceRecommendations.potentialPitfalls?.slice(0, 1),
+              cognitiveBiases: validatedInput.intelligenceRecommendations?.cognitiveBiases?.slice(0, 1),
+              metacognitiveStrategies: validatedInput.intelligenceRecommendations?.metacognitiveStrategies?.slice(0, 1),
+              insightPrompts: validatedInput.intelligenceRecommendations?.insightGenerationPrompts?.slice(0, 1)
             } : undefined
           }, null, 2)
         }]
@@ -818,12 +770,12 @@ class SequentialThinkingServer {
   }
 
   private createProgressBar(percentage: number): string {
-    const width = 50;
+    const width = 30; // Reduced from 50
     const completed = Math.floor(width * (percentage / 100));
     const remaining = width - completed;
     
     const bar = '█'.repeat(completed) + '░'.repeat(remaining);
-    return `\n${chalk.cyan('Progress:')} [${chalk.green(bar)}] ${Math.round(percentage)}%\n`;
+    return `\n${chalk.cyan('Progress:')} [${chalk.green(bar)}] ${Math.round(percentage)}%`;
   }
 
   private generateDependencyGraph(): string {
