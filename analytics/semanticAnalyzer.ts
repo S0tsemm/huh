@@ -893,28 +893,10 @@ export class SemanticAnalyzer {
   }
 
   private isSignificantConcept(concept: string): boolean {
-    // Enhanced concept significance check
-    const words = concept.split(' ');
-    
-    // Extended stopwords list
+    // Simplified concept significance check
     const stopWords = new Set([
-      'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'is', 'are', 'was', 
-      'were', 'this', 'that', 'these', 'those', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 
-      'does', 'did', 'can', 'could', 'will', 'would', 'should', 'may', 'might', 'must', 'shall'
+      'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'is', 'are'
     ]);
-    
-    // For multi-word concepts, allow some stopwords
-    if (words.length > 1) {
-      // Check if all words are stopwords
-      const allStopwords = words.every(word => stopWords.has(word));
-      if (allStopwords) return false;
-      
-      // For longer concepts, they're more likely to be significant
-      if (words.length >= 3) return true;
-      
-      // For bigrams, at least one word should be non-stopword and longer than 3 chars
-      return words.some(word => !stopWords.has(word) && word.length > 3);
-    }
     
     // For single words, they should be longer and not stopwords
     return concept.length > 3 && !stopWords.has(concept);

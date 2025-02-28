@@ -50,14 +50,14 @@ export class PromptAnalyzer {
    * @returns PromptMetadata object with extracted information
    */
   public analyzePrompt(prompt: string): PromptMetadata {
-    // Extract goals from the prompt
-    const goals = this.extractGoals(prompt);
+    // Extract goals from the prompt - limit to top 3 goals
+    const goals = this.extractGoals(prompt).slice(0, 3);
     
-    // Extract constraints from the prompt
-    const constraints = this.extractConstraints(prompt);
+    // Extract constraints from the prompt - limit to top 3 constraints
+    const constraints = this.extractConstraints(prompt).slice(0, 3);
     
-    // Extract knowledge domains
-    const domains = this.extractDomains(prompt);
+    // Extract knowledge domains - limit to top 3 domains
+    const domains = this.extractDomains(prompt).slice(0, 3);
     
     // Extract expected output format
     const expectedOutputFormat = this.extractOutputFormat(prompt);
@@ -68,18 +68,30 @@ export class PromptAnalyzer {
     // Estimate complexity
     const complexity = this.estimateComplexity(prompt);
     
-    // Extract keywords
-    const keywords = this.extractKeywords(prompt);
+    // Extract keywords - limit to top 8 keywords
+    const keywords = this.extractKeywords(prompt).slice(0, 8);
     
-    // Extract entities
-    const entities = this.extractEntities(prompt);
+    // Extract entities - limit to top 5 entities
+    const entities = this.extractEntities(prompt).slice(0, 5);
     
     // Determine task type
     const taskType = this.determineTaskType(prompt);
     
-    // New analyses
-    const sentiment = this.analyzeSentiment(prompt);
-    const intent = this.classifyIntent(prompt);
+    // Simplified sentiment analysis
+    const sentiment = {
+      sentiment: this.analyzeSentiment(prompt).sentiment,
+      intensity: this.analyzeSentiment(prompt).intensity,
+      emotionalTone: this.analyzeSentiment(prompt).emotionalTone.slice(0, 2),
+      urgency: this.analyzeSentiment(prompt).urgency
+    };
+    
+    // Simplified intent classification
+    const intent = {
+      primaryIntent: this.classifyIntent(prompt).primaryIntent,
+      secondaryIntents: this.classifyIntent(prompt).secondaryIntents.slice(0, 1),
+      confidence: this.classifyIntent(prompt).confidence,
+      actionOriented: this.classifyIntent(prompt).actionOriented
+    };
     
     return {
       originalPrompt: prompt,
@@ -92,7 +104,6 @@ export class PromptAnalyzer {
       keywords,
       entities,
       taskType,
-      // Add new fields
       sentiment,
       intent
     };

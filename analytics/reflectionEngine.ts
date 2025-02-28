@@ -344,21 +344,20 @@ export class ReflectionEngine {
   }
 
   private generateQualityBasedPrompts(quality: ThoughtData['quality']): string[] {
-    const prompts: string[] = [];
+    if (!quality) return [];
 
-    if (!quality) return prompts;
+    // Return only the most relevant quality prompt
+    if (quality.coherence < 5) {
+      return ['How could this thought be better connected to context?'];
+    }
+    if (quality.depth < 5) {
+      return ['What deeper aspects could be explored?'];
+    }
+    if (quality.relevance < 5) {
+      return ['How could this be made more relevant to the goal?'];
+    }
 
-    if (quality.coherence < 7) {
-      prompts.push('How could this thought be better connected to the overall context?');
-    }
-    if (quality.depth < 7) {
-      prompts.push('What deeper aspects of this thought could be explored?');
-    }
-    if (quality.relevance < 7) {
-      prompts.push('How could this thought be made more relevant to the main goal?');
-    }
-
-    return prompts;
+    return [];
   }
 
   /**

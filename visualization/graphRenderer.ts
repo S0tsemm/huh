@@ -687,15 +687,11 @@ export class GraphRenderer {
     intelligenceRecommendations?: IntelligenceMaximizationRecommendations
   ): string {
     const lines: string[] = [];
-    lines.push(chalk.cyan('\n=== Intelligence Maximization Dashboard ===\n'));
+    lines.push(chalk.cyan('\n== Intelligence Dashboard =='));
     
-    // Display prompt information if available
+    // Display minimal prompt information if available
     if (promptMetadata) {
-      lines.push(chalk.yellow('Prompt Analysis:'));
-      lines.push(`  Task Type: ${promptMetadata.taskType}`);
-      lines.push(`  Complexity: ${promptMetadata.complexity}`);
-      lines.push(`  Priority: ${promptMetadata.priority}`);
-      lines.push('');
+      lines.push(`Task: ${promptMetadata.taskType} | Complexity: ${promptMetadata.complexity}`);
     }
     
     // Display thinking progress
@@ -705,134 +701,35 @@ export class GraphRenderer {
     );
     
     const progress = Math.round((latestThought.thoughtNumber / latestThought.totalThoughts) * 100);
-    const barWidth = 30;
+    const barWidth = 20; // Reduced from 30
     const filledWidth = Math.floor(barWidth * (progress / 100));
     const progressBar = '█'.repeat(filledWidth) + '░'.repeat(barWidth - filledWidth);
     
-    lines.push(chalk.yellow('Thinking Progress:'));
-    lines.push(`  [${progressBar}] ${progress}%`);
-    lines.push(`  Current Phase: ${latestThought.phase || 'Unknown'}`);
-    lines.push('');
+    lines.push(`Progress: [${progressBar}] ${progress}% | Phase: ${latestThought.phase || 'Unknown'}`);
     
-    // Display thought quality metrics
-    lines.push(chalk.yellow('Thought Quality Metrics:'));
-    
-    const qualityScores = thoughts
-      .filter(t => t.quality && t.quality.qualityScore !== undefined)
-      .map(t => t.quality!.qualityScore);
-    
-    if (qualityScores.length > 0) {
-      const avgQuality = qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length;
-      lines.push(`  Average Quality: ${avgQuality.toFixed(1)}/10`);
-      
-      // Quality trend
-      if (qualityScores.length >= 3) {
-        const recentScores = qualityScores.slice(-3);
-        const recentAvg = recentScores.reduce((sum, score) => sum + score, 0) / recentScores.length;
-        const earlierScores = qualityScores.slice(0, -3);
-        const earlierAvg = earlierScores.length > 0 ? 
-          earlierScores.reduce((sum, score) => sum + score, 0) / earlierScores.length : recentAvg;
-        
-        const trend = recentAvg > earlierAvg ? 'Improving' : 
-                     recentAvg < earlierAvg ? 'Declining' : 'Stable';
-        
-        lines.push(`  Quality Trend: ${trend}`);
-      }
-    } else {
-      lines.push('  No quality metrics available');
-    }
-    lines.push('');
-    
-    // Display prompt alignment if available
-    const alignmentScores = thoughts
-      .filter(t => t.promptAlignment !== undefined)
-      .map(t => t.promptAlignment as number);
-    
-    if (alignmentScores.length > 0) {
-      const avgAlignment = alignmentScores.reduce((sum, score) => sum + score, 0) / alignmentScores.length;
-      lines.push(chalk.yellow('Prompt Alignment:'));
-      lines.push(`  Average Alignment: ${avgAlignment.toFixed(1)}/10`);
-      
-      // Count thoughts by alignment level
-      const highAligned = alignmentScores.filter(score => score >= 7).length;
-      const mediumAligned = alignmentScores.filter(score => score >= 4 && score < 7).length;
-      const lowAligned = alignmentScores.filter(score => score < 4).length;
-      
-      lines.push(`  High Alignment: ${highAligned} thoughts`);
-      lines.push(`  Medium Alignment: ${mediumAligned} thoughts`);
-      lines.push(`  Low Alignment: ${lowAligned} thoughts`);
-      lines.push('');
-    }
-    
-    // Display intelligence recommendations if available
+    // Display only the most important intelligence recommendations
     if (intelligenceRecommendations) {
-      // Display cognitive biases
+      // Display top cognitive bias if likelihood is high
       if (intelligenceRecommendations.cognitiveBiases && 
           intelligenceRecommendations.cognitiveBiases.length > 0) {
-        lines.push(chalk.yellow('Potential Cognitive Biases:'));
-        intelligenceRecommendations.cognitiveBiases
-          .sort((a, b) => b.likelihood - a.likelihood)
-          .slice(0, 3) // Show top 3
-          .forEach(bias => {
-            const likelihood = Math.round(bias.likelihood * 10);
-            lines.push(`  • ${bias.biasType} (${likelihood}/10): ${bias.description}`);
-          });
-        lines.push('');
+        const topBias = intelligenceRecommendations.cognitiveBiases
+          .sort((a, b) => b.likelihood - a.likelihood)[0];
+        lines.push(chalk.yellow(`Bias: ${topBias.biasType} - ${topBias.mitigationStrategy}`));
       }
       
-      // Display metacognitive strategies
+      // Display top strategy recommendation
       if (intelligenceRecommendations.metacognitiveStrategies && 
           intelligenceRecommendations.metacognitiveStrategies.length > 0) {
-        lines.push(chalk.yellow('Recommended Metacognitive Strategies:'));
-        intelligenceRecommendations.metacognitiveStrategies
-          .slice(0, 3) // Show top 3
-          .forEach(strategy => {
-            lines.push(`  • ${strategy.strategyName}: ${strategy.description}`);
-          });
-        lines.push('');
+        const topStrategy = intelligenceRecommendations.metacognitiveStrategies[0];
+        lines.push(chalk.yellow(`Strategy: ${topStrategy.strategyName} - ${topStrategy.description}`));
       }
       
-      // Display focus areas
+      // Display top focus area
       if (intelligenceRecommendations.focusAreas && 
           intelligenceRecommendations.focusAreas.length > 0) {
-        lines.push(chalk.yellow('Recommended Focus Areas:'));
-        intelligenceRecommendations.focusAreas.forEach(area => {
-          lines.push(`  • ${area}`);
-        });
-        lines.push('');
-      }
-      
-      // Display mental models if available
-      if (intelligenceRecommendations.mentalModels && 
-          intelligenceRecommendations.mentalModels.length > 0) {
-        lines.push(chalk.yellow('Recommended Mental Models:'));
-        intelligenceRecommendations.mentalModels.forEach(model => {
-          lines.push(`  • ${model.modelName}: ${model.description}`);
-        });
-        lines.push('');
+        lines.push(chalk.yellow(`Focus: ${intelligenceRecommendations.focusAreas[0]}`));
       }
     }
-    
-    // Display thought pattern analysis
-    const thoughtsByPhase: Record<string, number> = {
-      'Planning': 0,
-      'Analysis': 0,
-      'Execution': 0,
-      'Verification': 0
-    };
-    
-    thoughts.forEach(thought => {
-      if (thought.phase) {
-        thoughtsByPhase[thought.phase]++;
-      }
-    });
-    
-    lines.push(chalk.yellow('Thought Distribution by Phase:'));
-    Object.entries(thoughtsByPhase).forEach(([phase, count]) => {
-      const percentage = Math.round((count / thoughts.length) * 100);
-      const phaseBar = '█'.repeat(Math.floor(percentage / 5)) + '░'.repeat(20 - Math.floor(percentage / 5));
-      lines.push(`  ${phase.padEnd(12)} [${phaseBar}] ${count} (${percentage}%)`);
-    });
     
     return lines.join('\n') + '\n';
   }
