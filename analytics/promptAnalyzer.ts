@@ -45,19 +45,19 @@ export class PromptAnalyzer {
   }
 
   /**
-   * Analyzes a prompt to extract key information
+   * Analyzes a prompt to extract key information (optimized for token efficiency)
    * @param prompt The user's original prompt
    * @returns PromptMetadata object with extracted information
    */
   public analyzePrompt(prompt: string): PromptMetadata {
-    // Extract goals from the prompt - limit to top 3 goals
-    const goals = this.extractGoals(prompt).slice(0, 3);
+    // Extract goals from the prompt - limit to top 2 goals
+    const goals = this.extractGoals(prompt).slice(0, 2);
     
-    // Extract constraints from the prompt - limit to top 3 constraints
-    const constraints = this.extractConstraints(prompt).slice(0, 3);
+    // Extract constraints from the prompt - limit to top 2 constraints
+    const constraints = this.extractConstraints(prompt).slice(0, 2);
     
-    // Extract knowledge domains - limit to top 3 domains
-    const domains = this.extractDomains(prompt).slice(0, 3);
+    // Extract knowledge domains - limit to top 2 domains
+    const domains = this.extractDomains(prompt).slice(0, 2);
     
     // Extract expected output format
     const expectedOutputFormat = this.extractOutputFormat(prompt);
@@ -68,11 +68,11 @@ export class PromptAnalyzer {
     // Estimate complexity
     const complexity = this.estimateComplexity(prompt);
     
-    // Extract keywords - limit to top 8 keywords
-    const keywords = this.extractKeywords(prompt).slice(0, 8);
+    // Extract keywords - limit to top 5 keywords
+    const keywords = this.extractKeywords(prompt).slice(0, 5);
     
-    // Extract entities - limit to top 5 entities
-    const entities = this.extractEntities(prompt).slice(0, 5);
+    // Extract entities - limit to top 3 entities
+    const entities = this.extractEntities(prompt).slice(0, 3);
     
     // Determine task type
     const taskType = this.determineTaskType(prompt);
@@ -81,14 +81,14 @@ export class PromptAnalyzer {
     const sentiment = {
       sentiment: this.analyzeSentiment(prompt).sentiment,
       intensity: this.analyzeSentiment(prompt).intensity,
-      emotionalTone: this.analyzeSentiment(prompt).emotionalTone.slice(0, 2),
+      emotionalTone: this.analyzeSentiment(prompt).emotionalTone.slice(0, 1), // Limit to top 1
       urgency: this.analyzeSentiment(prompt).urgency
     };
     
     // Simplified intent classification
     const intent = {
       primaryIntent: this.classifyIntent(prompt).primaryIntent,
-      secondaryIntents: this.classifyIntent(prompt).secondaryIntents.slice(0, 1),
+      secondaryIntents: this.classifyIntent(prompt).secondaryIntents.slice(0, 1), // Limit to top 1
       confidence: this.classifyIntent(prompt).confidence,
       actionOriented: this.classifyIntent(prompt).actionOriented
     };
@@ -110,7 +110,7 @@ export class PromptAnalyzer {
   }
 
   /**
-   * Analyzes a thought to determine how well it aligns with the prompt
+   * Analyzes a thought to determine how well it aligns with the prompt (optimized)
    * @param thought The thought text
    * @param promptMetadata The prompt metadata
    * @returns PromptAlignmentData with alignment scores and feedback
@@ -119,11 +119,28 @@ export class PromptAnalyzer {
     // Calculate overall alignment score
     const promptAlignment = this.calculateAlignmentScore(thought, promptMetadata);
     
-    // Calculate relevance to different prompt aspects
-    const promptRelevance = this.calculateRelevanceScores(thought, promptMetadata);
+    // Calculate relevance to different prompt aspects (simplified)
+    const promptRelevance: Record<string, number> = {};
     
-    // Check for topic drift
-    const driftCheck = this.checkForTopicDrift(thought, promptMetadata);
+    // Only calculate relevance for goals (most important)
+    promptMetadata.goals.forEach((goal, index) => {
+      const goalKeywords = goal.toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter(word => word.length > 3);
+      
+      let goalKeywordMatches = 0;
+      for (const keyword of goalKeywords) {
+        if (thought.toLowerCase().includes(keyword)) {
+          goalKeywordMatches++;
+        }
+      }
+      
+      const relevance = goalKeywords.length > 0 ? 
+        (goalKeywordMatches / goalKeywords.length) * 10 : 5;
+      
+      promptRelevance[`goal_${index}`] = Math.round(relevance);
+    });
     
     // Generate alignment data
     const alignmentData: PromptAlignmentData = {
@@ -131,10 +148,10 @@ export class PromptAnalyzer {
       promptRelevance
     };
     
-    // Add drift warning if detected
-    if (driftCheck.hasDrift) {
-      alignmentData.driftWarning = driftCheck.warning;
-      alignmentData.suggestedCorrections = driftCheck.corrections;
+    // Add drift warning only if alignment is very low
+    if (promptAlignment < 4) {
+      alignmentData.driftWarning = `Low alignment with prompt (${promptAlignment}/10)`;
+      alignmentData.suggestedCorrections = [`Focus more on the main goals: ${promptMetadata.goals[0]}`];
     }
     
     return alignmentData;

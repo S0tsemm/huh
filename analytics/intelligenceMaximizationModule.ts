@@ -165,12 +165,12 @@ export interface IntelligenceMaximizationRecommendations {
 
 export class IntelligenceMaximizationModule {
   /**
-   * Generates comprehensive recommendations for maximizing AI intelligence based on prompt
+   * Generates streamlined recommendations for maximizing AI intelligence based on prompt
    * @param promptMetadata The analyzed prompt metadata
    * @param currentThoughtNumber The current thought number in the sequence
    * @param totalThoughts The total estimated thoughts
    * @param phase The current thinking phase
-   * @returns Intelligence maximization recommendations
+   * @returns Intelligence maximization recommendations (optimized for token efficiency)
    */
   public generateRecommendations(
     promptMetadata: PromptMetadata,
@@ -184,51 +184,98 @@ export class IntelligenceMaximizationModule {
       toolsUsed?: string[];
     }>
   ): IntelligenceMaximizationRecommendations {
-    // Generate strategy recommendations
-    const strategies = this.recommendStrategies(promptMetadata, currentThoughtNumber, totalThoughts, phase);
+    // Generate only the most essential recommendations
     
-    // Recommend reasoning types
-    const reasoningTypes = this.recommendReasoningTypes(promptMetadata, phase);
+    // Generate top strategy recommendations (limit to 2)
+    const strategies = this.recommendStrategies(promptMetadata, currentThoughtNumber, totalThoughts, phase)
+      .slice(0, 2);
     
-    // Estimate complexity
+    // Recommend top reasoning type (limit to 1)
+    const reasoningTypes = this.recommendReasoningTypes(promptMetadata, phase)
+      .slice(0, 1);
+    
+    // Estimate complexity (essential for thought planning)
     const complexityEstimation = this.estimateDetailedComplexity(promptMetadata);
     
-    // Recommend tools
-    const toolRecommendations = this.recommendTools(promptMetadata, phase);
+    // Recommend tools (limit to 3)
+    const toolRecommendations = this.recommendTools(promptMetadata, phase)
+      .slice(0, 3);
     
-    // Identify focus areas
-    const focusAreas = this.identifyFocusAreas(promptMetadata, currentThoughtNumber, totalThoughts);
+    // Identify focus areas (limit to 2)
+    const focusAreas = this.identifyFocusAreas(promptMetadata, currentThoughtNumber, totalThoughts)
+      .slice(0, 2);
     
-    // Identify potential pitfalls
-    const potentialPitfalls = this.identifyPotentialPitfalls(promptMetadata);
+    // Identify potential pitfalls (limit to 2)
+    const potentialPitfalls = this.identifyPotentialPitfalls(promptMetadata)
+      .slice(0, 2);
     
-    // New methods
-    const cognitiveBiases = this.detectPotentialCognitiveBiases(promptMetadata, phase);
-    const metacognitiveStrategies = this.recommendMetacognitiveStrategies(promptMetadata, currentThoughtNumber, totalThoughts);
-    const adaptiveSuggestions = this.generateAdaptiveSuggestions(promptMetadata, currentThoughtNumber, totalThoughts, phase);
-    const insightGenerationPrompts = this.generateInsightPrompts(promptMetadata, phase);
+    // Generate only the most critical cognitive bias detection (limit to 1)
+    const cognitiveBiases = this.detectPotentialCognitiveBiases(promptMetadata, phase)
+      .slice(0, 1);
     
-    // New adaptive learning recommendations
-    const adaptiveLearningRecommendations = this.generateAdaptiveLearningRecommendations(promptMetadata, currentThoughtNumber, totalThoughts);
+    // Generate only the most relevant metacognitive strategies (limit to 1)
+    const metacognitiveStrategies = this.recommendMetacognitiveStrategies(promptMetadata, currentThoughtNumber, totalThoughts)
+      .slice(0, 1);
     
-    // Optional thought pattern analysis
-    const thoughtPatternAnalysis = previousThoughts && previousThoughts.length > 0 
+    // Generate only the most relevant adaptive suggestions (limit to 2)
+    const adaptiveSuggestions = this.generateAdaptiveSuggestions(promptMetadata, currentThoughtNumber, totalThoughts, phase)
+      .slice(0, 2);
+    
+    // Generate only the most useful insight prompts (limit to 1)
+    const insightGenerationPrompts = this.generateInsightPrompts(promptMetadata, phase)
+      .slice(0, 1);
+    
+    // Generate only essential adaptive learning recommendations (limit to 1)
+    const adaptiveLearningRecommendations = this.generateAdaptiveLearningRecommendations(promptMetadata, currentThoughtNumber, totalThoughts)
+      .slice(0, 1);
+    
+    // Optional thought pattern analysis (simplified)
+    const thoughtPatternAnalysis = previousThoughts && previousThoughts.length > 3 
       ? this.analyzeThoughtPatterns(previousThoughts, promptMetadata)
       : undefined;
     
-    // New advanced recommendations
-    const cognitiveModels = this.recommendCognitiveModels(promptMetadata, phase);
-    const reasoningFrameworks = this.recommendReasoningFrameworks(promptMetadata, phase);
-    const decisionStrategies = this.recommendDecisionStrategies(promptMetadata, currentThoughtNumber, totalThoughts);
-    const mentalModels = this.recommendMentalModels(promptMetadata, phase);
+    // Generate only the most relevant cognitive models (limit to 1)
+    const cognitiveModels = this.recommendCognitiveModels(promptMetadata, phase)
+      .slice(0, 1);
     
-    // New advanced intelligence features
-    const cognitiveArchitectures = this.recommendCognitiveArchitectures(promptMetadata, phase);
-    const epistemologicalFrameworks = this.recommendEpistemologicalFrameworks(promptMetadata, phase);
-    const advancedMetacognitiveStrategies = this.recommendAdvancedMetacognitiveStrategies(promptMetadata, currentThoughtNumber, totalThoughts);
-    const conceptualBlending = this.generateConceptualBlending(promptMetadata);
-    const dialecticalReasoning = this.generateDialecticalReasoning(promptMetadata);
-    const adaptiveLearningPath = this.generateAdaptiveLearningPath(promptMetadata, currentThoughtNumber, totalThoughts);
+    // Generate only the most relevant reasoning frameworks (limit to 1)
+    const reasoningFrameworks = this.recommendReasoningFrameworks(promptMetadata, phase)
+      .slice(0, 1);
+    
+    // Generate only the most relevant decision strategies (limit to 1)
+    const decisionStrategies = this.recommendDecisionStrategies(promptMetadata, currentThoughtNumber, totalThoughts)
+      .slice(0, 1);
+    
+    // Generate only the most relevant mental models (limit to 1)
+    const mentalModels = this.recommendMentalModels(promptMetadata, phase)
+      .slice(0, 1);
+    
+    // Generate only the most relevant cognitive architectures (limit to 1)
+    const cognitiveArchitectures = this.recommendCognitiveArchitectures(promptMetadata, phase)
+      .slice(0, 1);
+    
+    // Generate only the most relevant epistemological frameworks (limit to 1)
+    const epistemologicalFrameworks = this.recommendEpistemologicalFrameworks(promptMetadata, phase)
+      .slice(0, 1);
+    
+    // Generate only the most relevant metacognitive strategies (limit to 1)
+    const advancedMetacognitiveStrategies = this.recommendAdvancedMetacognitiveStrategies(promptMetadata, currentThoughtNumber, totalThoughts)
+      .slice(0, 1);
+    
+    // Generate conceptual blending only for creative tasks (limit to 1)
+    const conceptualBlending = promptMetadata.taskType === 'creative' 
+      ? this.generateConceptualBlending(promptMetadata).slice(0, 1)
+      : undefined;
+    
+    // Generate dialectical reasoning only for analytical tasks (limit to 1)
+    const dialecticalReasoning = promptMetadata.taskType === 'analytical'
+      ? this.generateDialecticalReasoning(promptMetadata).slice(0, 1)
+      : undefined;
+    
+    // Generate adaptive learning path only for complex tasks
+    const adaptiveLearningPath = promptMetadata.complexity === 'complex'
+      ? this.generateAdaptiveLearningPath(promptMetadata, currentThoughtNumber, totalThoughts)
+      : undefined;
     
     return {
       strategies,
@@ -243,12 +290,10 @@ export class IntelligenceMaximizationModule {
       insightGenerationPrompts,
       adaptiveLearningRecommendations,
       thoughtPatternAnalysis,
-      // Add new fields
       cognitiveModels,
       reasoningFrameworks,
       decisionStrategies,
       mentalModels,
-      // Add new advanced intelligence features
       cognitiveArchitectures,
       epistemologicalFrameworks,
       advancedMetacognitiveStrategies,
@@ -644,52 +689,35 @@ export class IntelligenceMaximizationModule {
   }
 
   /**
-   * Estimates detailed complexity of the task based on prompt metadata
+   * Estimates detailed complexity of the task based on prompt metadata (optimized)
    * @param promptMetadata The analyzed prompt metadata
-   * @returns Detailed complexity estimation
+   * @returns Simplified complexity estimation
    */
   private estimateDetailedComplexity(promptMetadata: PromptMetadata): ComplexityEstimation {
     // Start with the basic complexity from prompt metadata
     const overallComplexity = promptMetadata.complexity;
     
-    // Calculate dimensional complexity scores
-    const conceptualComplexity = this.calculateConceptualComplexity(promptMetadata);
-    const proceduralComplexity = this.calculateProceduralComplexity(promptMetadata);
-    const contextualComplexity = this.calculateContextualComplexity(promptMetadata);
-    const domainComplexity = this.calculateDomainComplexity(promptMetadata);
+    // Calculate dimensional complexity scores (simplified)
+    const conceptualComplexity = Math.min(10, 5 + promptMetadata.goals.length + promptMetadata.domains.length);
+    const proceduralComplexity = Math.min(10, 5 + promptMetadata.constraints.length);
+    const contextualComplexity = Math.min(10, 5 + promptMetadata.entities.length / 2);
+    const domainComplexity = promptMetadata.domains.some(d => 
+      ['quantum physics', 'machine learning', 'artificial intelligence', 'cryptography'].includes(d.toLowerCase())
+    ) ? 9 : promptMetadata.domains.some(d => 
+      ['programming', 'engineering', 'biology', 'chemistry'].includes(d.toLowerCase())
+    ) ? 7 : 5;
     
     // Calculate recommended thought count based on complexity
-    let recommendedThoughtCount = 5; // Default for simple tasks
+    let recommendedThoughtCount = overallComplexity === 'simple' ? 5 : 
+                                 overallComplexity === 'medium' ? 8 : 12;
     
-    if (overallComplexity === 'medium') {
-      recommendedThoughtCount = 8;
-    } else if (overallComplexity === 'complex') {
-      recommendedThoughtCount = 12;
-    }
-    
-    // Adjust based on dimensional complexity
-    const avgDimensionalComplexity = (
-      conceptualComplexity + 
-      proceduralComplexity + 
-      contextualComplexity + 
-      domainComplexity
-    ) / 4;
-    
-    // Fine-tune thought count based on dimensional complexity
-    recommendedThoughtCount = Math.round(
-      recommendedThoughtCount * (1 + (avgDimensionalComplexity - 5) / 10)
-    );
-    
-    // Calculate recommended phase distribution
-    const recommendedPhaseDistribution = this.calculatePhaseDistribution(
-      overallComplexity,
-      {
-        conceptual: conceptualComplexity,
-        procedural: proceduralComplexity,
-        contextual: contextualComplexity,
-        domain: domainComplexity
-      }
-    );
+    // Calculate recommended phase distribution (simplified)
+    const recommendedPhaseDistribution = {
+      Planning: overallComplexity === 'simple' ? 1 : overallComplexity === 'medium' ? 2 : 3,
+      Analysis: overallComplexity === 'simple' ? 1 : overallComplexity === 'medium' ? 2 : 3,
+      Execution: overallComplexity === 'simple' ? 2 : overallComplexity === 'medium' ? 3 : 4,
+      Verification: overallComplexity === 'simple' ? 1 : overallComplexity === 'medium' ? 1 : 2
+    };
     
     return {
       overallComplexity,

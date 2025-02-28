@@ -714,20 +714,22 @@ export class GraphRenderer {
           intelligenceRecommendations.cognitiveBiases.length > 0) {
         const topBias = intelligenceRecommendations.cognitiveBiases
           .sort((a, b) => b.likelihood - a.likelihood)[0];
-        lines.push(chalk.yellow(`Bias: ${topBias.biasType} - ${topBias.mitigationStrategy}`));
+        if (topBias.likelihood > 0.7) { // Only show high likelihood biases
+          lines.push(chalk.yellow(`Bias: ${topBias.biasType} - ${topBias.mitigationStrategy}`));
+        }
       }
       
       // Display top strategy recommendation
       if (intelligenceRecommendations.metacognitiveStrategies && 
           intelligenceRecommendations.metacognitiveStrategies.length > 0) {
         const topStrategy = intelligenceRecommendations.metacognitiveStrategies[0];
-        lines.push(chalk.yellow(`Strategy: ${topStrategy.strategyName} - ${topStrategy.description}`));
+        lines.push(chalk.green(`Strategy: ${topStrategy.strategyName}`));
       }
       
       // Display top focus area
       if (intelligenceRecommendations.focusAreas && 
           intelligenceRecommendations.focusAreas.length > 0) {
-        lines.push(chalk.yellow(`Focus: ${intelligenceRecommendations.focusAreas[0]}`));
+        lines.push(chalk.blue(`Focus: ${intelligenceRecommendations.focusAreas[0]}`));
       }
     }
     
